@@ -1,0 +1,117 @@
+// ====== Helpers ======
+const qs = (s, el = document) => el.querySelector(s);
+const qsa = (s, el = document) => [...el.querySelectorAll(s)];
+
+// ====== Year ======
+qs("#year").textContent = new Date().getFullYear();
+
+// ====== AOS init ======
+AOS.init({
+  duration: 750,
+  once: true,
+  offset: 80
+});
+
+// ====== Swiper init ======
+new Swiper(".art-swiper", {
+  loop: true,
+  grabCursor: true,
+  centeredSlides: true,
+  slidesPerView: 1,
+  spaceBetween: 14,
+  autoplay: { delay: 2800, disableOnInteraction: false },
+  pagination: { el: ".swiper-pagination", clickable: true },
+  navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
+  breakpoints: {
+    992: { slidesPerView: 1.2 }
+  }
+});
+
+// ====== lightGallery (Gallery A) ======
+lightGallery(document.getElementById("galleryA"), {
+  selector: ".grid-item",
+  speed: 350,
+  download: false,
+  plugins: [lgThumbnail, lgZoom, lgFullscreen],
+  thumbnail: true,
+  zoom: true,
+  fullScreen: true
+});
+
+// ====== Isotope (filters + search) ======
+const gridEl = qs("#galleryA");
+
+imagesLoaded(gridEl, () => {
+  const iso = new Isotope(gridEl, {
+    itemSelector: ".grid-item",
+    layoutMode: "masonry",
+    percentPosition: true
+  });
+
+  // Filter buttons
+  qsa(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      qsa(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      const filter = btn.dataset.filter;
+      iso.arrange({ filter });
+    });
+  });
+
+  // Search (title from data-sub-html + alt)
+  const input = qs("#artSearch");
+  input.addEventListener("input", () => {
+    const val = input.value.trim().toLowerCase();
+
+    iso.arrange({
+      filter: (itemElem) => {
+        const img = itemElem.querySelector("img");
+        const alt = (img?.alt || "").toLowerCase();
+        const sub = (itemElem.getAttribute("data-sub-html") || "").toLowerCase();
+        return alt.includes(val) || sub.includes(val);
+      }
+    });
+  });
+});
+
+// ====== Video Modal ======
+const videoModalEl = qs("#videoModal");
+const videoFrame = qs("#videoFrame");
+const videoModal = new bootstrap.Modal(videoModalEl);
+
+qsa(".video-card").forEach(card => {
+  card.addEventListener("click", () => {
+    const src = card.dataset.video;
+    videoFrame.src = src + (src.includes("?") ? "&" : "?") + "autoplay=1";
+    videoModal.show();
+  });
+});
+
+videoModalEl.addEventListener("hidden.bs.modal", () => {
+  videoFrame.src = "";
+});
+
+// ====== Contact Form (Front-end demo) ======
+const form = qs("#contactForm");
+const statusEl = qs("#formStatus");
+
+form.addEventListener("submit", (e) => {
+  e.preventDefault();
+  statusEl.textContent = "";
+
+  // basic validation
+  const data = new FormData(form);
+  const name = (data.get("name") || "").trim();
+  const email = (data.get("email") || "").trim();
+  const type = (data.get("type") || "").trim();
+  const message = (data.get("message") || "").trim();
+
+  if (!name || !email || !type || !message) {
+    statusEl.textContent = "⚠️ رجاءً عبّي كل الحقول.";
+    return;
+  }
+
+  // demo success
+  statusEl.textContent = "✅ تم! (تجريبي) — إذا بدك إرسال فعلي ركبنا Backend خلال دقائق.";
+  form.reset();
+});
